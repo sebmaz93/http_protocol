@@ -16,9 +16,9 @@ const (
 )
 
 type RequestLine struct {
-	HttpVersion   string
-	RequestTarget string
 	Method        string
+	RequestTarget string
+	HttpVersion   string
 }
 
 func (r *RequestLine) ValidHTTP() bool {
