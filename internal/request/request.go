@@ -33,7 +33,7 @@ type Request struct {
 var ERROR_MALFORMED_REQ_LINE = fmt.Errorf("malformed request line.")
 var ERROR_UNSUPPORTED_HTTP_VERSION = fmt.Errorf("unsupported HTTP version.")
 var ERROR_REQUEST_IN_ERROR_STATE = fmt.Errorf("request in error state.")
-var SEPARATOR = []byte("\r\n")
+var CRLF = []byte("\r\n")
 
 func newRequest() *Request {
 	return &Request{
@@ -73,13 +73,13 @@ func (r *Request) done() bool {
 }
 
 func parseRequestLine(r []byte) (*RequestLine, int, error) {
-	idx := bytes.Index(r, SEPARATOR)
+	idx := bytes.Index(r, CRLF)
 	if idx == -1 {
 		return nil, 0, nil
 	}
 
 	startLine := r[:idx]
-	read := idx + len(SEPARATOR)
+	read := idx + len(CRLF)
 
 	parts := bytes.Split(startLine, []byte(" "))
 	if len(parts) != 3 {
