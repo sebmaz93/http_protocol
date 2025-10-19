@@ -40,9 +40,27 @@ func TestHeadersParse(t *testing.T) {
 	assert.Equal(t, 33, n)
 	assert.True(t, done, "Expected done to be false, got: %v", done)
 
+	// Test: Valid headers with multiple values
+	headers = NewHeaders()
+	data = []byte("Person: Tom\r\nPerson: Jax\r\nPerson: Lucifer\r\nPerson: Boby\r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Equal(t, "Tom, Jax, Lucifer, Boby", headers.Get("Person"))
+	assert.Equal(t, 57, n)
+	assert.True(t, done, "Expected done to be false, got: %v", done)
+
 	// Test: Invalid spacing header
 	headers = NewHeaders()
 	data = []byte("       Host : localhost:42069       \r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.Error(t, err)
+	assert.Equal(t, 0, n)
+	assert.False(t, done)
+
+	// Test: Invalid header name
+	headers = NewHeaders()
+	data = []byte("H©st: localhost:42069\r\n\r\n")
 	n, done, err = headers.Parse(data)
 	require.Error(t, err)
 	assert.Equal(t, 0, n)
