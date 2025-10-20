@@ -67,6 +67,12 @@ func (h *Headers) Set(key, value string) {
 	}
 }
 
+func (h *Headers) ForEach(cb func(k, v string)) {
+	for k, v := range h.headers {
+		cb(k, v)
+	}
+}
+
 func (h *Headers) Parse(data []byte) (int, bool, error) {
 	read := 0
 	done := false
