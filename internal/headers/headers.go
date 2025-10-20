@@ -3,6 +3,7 @@ package headers
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -53,18 +54,33 @@ func NewHeaders() *Headers {
 	}
 }
 
-func (h *Headers) Get(key string) string {
-	return h.headers[strings.ToLower(key)]
+func (h *Headers) Get(key string) (string, bool) {
+	str, ok := h.headers[strings.ToLower(key)]
+	return str, ok
 }
 
 func (h *Headers) Set(key, value string) {
 	lowerKey := strings.ToLower(key)
-	oldValue := h.Get(lowerKey)
-	if oldValue == "" {
+	oldValue, ok := h.Get(lowerKey)
+	if !ok {
 		h.headers[lowerKey] = value
 	} else {
 		h.headers[lowerKey] = strings.Join([]string{oldValue, value}, ", ")
 	}
+}
+
+func (h *Headers) GetInt(key string, defaultValue int) int {
+	strVal, ok := h.Get(key)
+	if !ok {
+		return defaultValue
+	}
+
+	val, err := strconv.Atoi(strVal)
+	if err != nil {
+		return defaultValue
+	}
+	return val
+
 }
 
 func (h *Headers) ForEach(cb func(k, v string)) {
