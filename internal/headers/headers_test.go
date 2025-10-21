@@ -17,7 +17,7 @@ func TestHeadersParse(t *testing.T) {
 	host, ok := headers.Get("Host")
 	assert.True(t, ok)
 	assert.Equal(t, "localhost:42069", host)
-	assert.Equal(t, 23, n)
+	assert.Equal(t, 25, n)
 	assert.True(t, done, "Expected done to be false, got: %v", done)
 
 	// Test: Valid single header with extra whitespace
@@ -29,7 +29,7 @@ func TestHeadersParse(t *testing.T) {
 	host, ok = headers.Get("Host")
 	assert.True(t, ok)
 	assert.Equal(t, "localhost:42069", host)
-	assert.Equal(t, 33, n)
+	assert.Equal(t, 35, n)
 	assert.True(t, done, "Expected done to be false, got: %v", done)
 
 	// Test: Valid 2 headers
@@ -47,7 +47,7 @@ func TestHeadersParse(t *testing.T) {
 	zxz, ok := headers.Get("zxz")
 	assert.False(t, ok)
 	assert.Equal(t, "", zxz)
-	assert.Equal(t, 33, n)
+	assert.Equal(t, 35, n)
 	assert.True(t, done, "Expected done to be false, got: %v", done)
 
 	// Test: Valid headers with multiple values
@@ -59,7 +59,7 @@ func TestHeadersParse(t *testing.T) {
 	person, ok := headers.Get("Person")
 	assert.True(t, ok)
 	assert.Equal(t, "Tom, Jax, Lucifer, Boby", person)
-	assert.Equal(t, 57, n)
+	assert.Equal(t, 59, n)
 	assert.True(t, done, "Expected done to be false, got: %v", done)
 
 	// Test: Invalid spacing header

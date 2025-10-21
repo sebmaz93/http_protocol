@@ -102,6 +102,7 @@ func (h *Headers) Parse(data []byte) (int, bool, error) {
 		// end of header
 		if idx == 0 {
 			done = true
+			read += len(CRLF)
 			break
 		}
 

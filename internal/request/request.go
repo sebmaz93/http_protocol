@@ -49,6 +49,11 @@ func newRequest() *Request {
 	}
 }
 
+func (r *Request) hasBody() bool {
+	lenght := r.Headers.GetInt("content-length", 0)
+	return lenght > 0
+}
+
 func (r *Request) parse(data []byte) (int, error) {
 	read := 0
 
@@ -62,6 +67,7 @@ outer:
 		switch r.state {
 		case StateError:
 			return 0, ERROR_REQUEST_IN_ERROR_STATE
+
 		case StateInit:
 			rl, n, err := parseRequestLine(currentData)
 			if err != nil {
@@ -73,43 +79,48 @@ outer:
 			}
 			r.RequestLine = *rl
 			read += n
-
 			r.state = StateHeaders
+
 		case StateHeaders:
 			n, done, err := r.Headers.Parse(currentData)
 			if err != nil {
 				r.state = StateError
 				return 0, err
 			}
-
 			if n == 0 {
 				break outer
 			}
-
 			read += n
+
 			if done {
-				r.state = StateBody
+				if r.hasBody() {
+					r.state = StateBody
+				} else {
+					r.state = StateDone
+				}
 			}
+
 		case StateBody:
 			length := r.Headers.GetInt("content-length", 0)
 			if length == 0 {
-				r.state = StateDone
-				break outer
+				panic("chunked not impl")
 			}
 
 			remaining := min(length-len(r.Body), len(currentData))
 			r.Body = append(r.Body, currentData[:remaining]...)
+			read += remaining
+
 			if len(r.Body) > length {
 				r.state = StateError
 				return 0, ERROR_BODY_LENGTH_MISSMATCH
 			}
-			read += remaining
 			if len(r.Body) == length {
 				r.state = StateDone
 			}
 
 		case StateDone:
 			break outer
+
 		default:
 			panic("someting went wrong in parse method")
 		}
