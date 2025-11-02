@@ -10,15 +10,19 @@ import (
 type StatusCode uint16
 
 const (
-	StatusOK          StatusCode = 200
-	StatusBadReq      StatusCode = 400
-	StatusServerError StatusCode = 500
+	StatusOK               StatusCode = 200
+	StatusBadReq           StatusCode = 400
+	StatusNotFound         StatusCode = 404
+	StatusMethodNotAllowed StatusCode = 405
+	StatusServerError      StatusCode = 500
 )
 
 var statusMap = map[StatusCode]string{
-	StatusOK:          "OK",
-	StatusBadReq:      "Bad Request",
-	StatusServerError: "Internal Server Error",
+	StatusOK:               "OK",
+	StatusBadReq:           "Bad Request",
+	StatusNotFound:         "Not Found",
+	StatusMethodNotAllowed: "Method not allowed",
+	StatusServerError:      "Internal Server Error",
 }
 
 func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
