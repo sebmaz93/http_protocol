@@ -7,6 +7,16 @@ import (
 	"tcpToHttp/internal/headers"
 )
 
+type Writer struct {
+	writer io.Writer
+}
+
+func NewWriter(w io.Writer) *Writer {
+	return &Writer{
+		writer: w,
+	}
+}
+
 type StatusCode uint16
 
 const (
@@ -25,14 +35,14 @@ var statusMap = map[StatusCode]string{
 	StatusServerError:      "Internal Server Error",
 }
 
-func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
+func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	statusText, ok := statusMap[statusCode]
 	if !ok {
 		statusText = "Unknown Status"
 	}
 
 	statusLine := fmt.Sprintf("HTTP/1.1 %d %s\r\n", statusCode, statusText)
-	_, err := w.Write([]byte(statusLine))
+	_, err := w.writer.Write([]byte(statusLine))
 	return err
 }
 
@@ -44,12 +54,20 @@ func GetDefaultHeaders(contentLen int) *headers.Headers {
 	return h
 }
 
-func WriteHeaders(w io.Writer, header headers.Headers) error {
+func (w *Writer) WriteHeaders(headers headers.Headers) error {
 	b := []byte{}
-	header.ForEach(func(k, v string) {
+	headers.ForEach(func(k, v string) {
 		b = fmt.Appendf(b, "%s: %s\r\n", k, v)
 	})
 	b = fmt.Append(b, "\r\n")
-	_, err := w.Write(b)
+	_, err := w.writer.Write(b)
 	return err
+}
+
+func (w *Writer) WriteBody(p []byte) (int, error) {
+	n, err := w.writer.Write(p)
+	if err != nil {
+		return 0, err
+	}
+	return n, err
 }

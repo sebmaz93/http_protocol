@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"sync"
@@ -12,19 +11,19 @@ import (
 	"tcpToHttp/internal/response"
 )
 
-type HandlerFunc func(w io.Writer, req *request.Request) *HandlerError
+type HandlerFunc func(w *response.Writer, req *request.Request) *HandlerError
 
 type HandlerError struct {
 	StatusCode response.StatusCode
 	Message    string
 }
 
-func (hErr HandlerError) Write(w io.Writer) {
-	response.WriteStatusLine(w, hErr.StatusCode)
+func (hErr HandlerError) Write(w *response.Writer) {
+	w.WriteStatusLine(hErr.StatusCode)
 	messageBytes := []byte(hErr.Message)
 	headers := response.GetDefaultHeaders(len(messageBytes))
-	response.WriteHeaders(w, *headers)
-	w.Write(messageBytes)
+	w.WriteHeaders(*headers)
+	w.WriteBody(messageBytes)
 }
 
 type routeKey struct {
@@ -103,13 +102,14 @@ func (s *Server) listen() {
 
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
+	resWriter := response.NewWriter(conn)
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
 		hErr := &HandlerError{
 			StatusCode: response.StatusBadReq,
 			Message:    err.Error(),
 		}
-		hErr.Write(conn)
+		hErr.Write(resWriter)
 		return
 	}
 
@@ -138,28 +138,28 @@ func (s *Server) handleConn(conn net.Conn) {
 				StatusCode: response.StatusMethodNotAllowed,
 				Message:    err.Error(),
 			}
-			hErr.Write(conn)
+			hErr.Write(resWriter)
 		} else {
 			hErr := &HandlerError{
 				StatusCode: response.StatusNotFound,
 				Message:    err.Error(),
 			}
-			hErr.Write(conn)
+			hErr.Write(resWriter)
 		}
 		return
 	}
 
 	buf := bytes.NewBuffer([]byte{})
-	hErr := handler(buf, req)
+	hErr := handler(resWriter, req)
 	if hErr != nil {
-		hErr.Write(conn)
+		hErr.Write(resWriter)
 		return
 	}
 
 	b := buf.Bytes()
 	headers := response.GetDefaultHeaders(len(b))
-	response.WriteStatusLine(conn, response.StatusOK)
-	response.WriteHeaders(conn, *headers)
+	resWriter.WriteStatusLine(response.StatusOK)
+	resWriter.WriteHeaders(*headers)
 	conn.Write(b)
 	return
 }

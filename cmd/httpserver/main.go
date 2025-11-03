@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -32,19 +31,19 @@ func main() {
 	log.Println("Server gracefully stopped")
 }
 
-func defaultHandler(w io.Writer, req *request.Request) *server.HandlerError {
-	w.Write([]byte("All good, frfr\n"))
+func defaultHandler(w *response.Writer, req *request.Request) *server.HandlerError {
+	w.WriteBody([]byte("All good, frfr\n"))
 	return nil
 }
 
-func yourProblemHandler(w io.Writer, req *request.Request) *server.HandlerError {
+func yourProblemHandler(w *response.Writer, req *request.Request) *server.HandlerError {
 	return &server.HandlerError{
 		StatusCode: response.StatusBadReq,
 		Message:    "Your problem is not my problem\n",
 	}
 }
 
-func myProblemHandler(w io.Writer, req *request.Request) *server.HandlerError {
+func myProblemHandler(w *response.Writer, req *request.Request) *server.HandlerError {
 	return &server.HandlerError{
 		StatusCode: response.StatusServerError,
 		Message:    "Woopsie, my bad\n",
