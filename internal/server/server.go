@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"tcpToHttp/internal/request"
@@ -119,6 +120,10 @@ func (s *Server) handleConn(conn net.Conn) {
 		path:   req.RequestLine.RequestTarget,
 	}
 	handler, exists := s.routes[key]
+
+	if !exists {
+		handler, exists = s.findPatternMatch(req.RequestLine.Method, req.RequestLine.RequestTarget)
+	}
 	s.mu.RUnlock()
 
 	if !exists {
@@ -162,4 +167,39 @@ func (s *Server) handleConn(conn net.Conn) {
 	resWriter.WriteHeaders(*headers)
 	conn.Write(b)
 	return
+}
+
+func (s *Server) findPatternMatch(method, path string) (HandlerFunc, bool) {
+	for k, h := range s.routes {
+		if k.method != method {
+			continue
+		}
+
+		if strings.Contains(k.path, ":") {
+			if s.matchPath(k.path, path) {
+				return h, true
+			}
+		}
+	}
+	return nil, false
+}
+
+func (s *Server) matchPath(pattern, path string) bool {
+	patternParts := strings.Split(pattern, "/")
+	pathParts := strings.Split(path, "/")
+
+	if len(patternParts) != len(pathParts) {
+		return false
+	}
+
+	for i := range patternParts {
+		if strings.HasPrefix(patternParts[i], ":") {
+			continue
+		}
+		if patternParts[i] != pathParts[i] {
+			return false
+		}
+	}
+
+	return true
 }

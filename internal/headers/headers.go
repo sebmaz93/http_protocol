@@ -69,6 +69,11 @@ func (h *Headers) Set(key, value string, override bool) {
 	}
 }
 
+func (h *Headers) Delete(name string) {
+	lowerKey := strings.ToLower(name)
+	delete(h.headers, lowerKey)
+}
+
 func (h *Headers) GetInt(key string, defaultValue int) int {
 	strVal, ok := h.Get(key)
 	if !ok {
