@@ -59,10 +59,10 @@ func (h *Headers) Get(key string) (string, bool) {
 	return str, ok
 }
 
-func (h *Headers) Set(key, value string) {
+func (h *Headers) Set(key, value string, override bool) {
 	lowerKey := strings.ToLower(key)
 	oldValue, ok := h.Get(lowerKey)
-	if !ok {
+	if !ok || override {
 		h.headers[lowerKey] = value
 	} else {
 		h.headers[lowerKey] = strings.Join([]string{oldValue, value}, ", ")
@@ -111,7 +111,7 @@ func (h *Headers) Parse(data []byte) (int, bool, error) {
 			return 0, false, err
 		}
 		read += idx + len(CRLF)
-		h.Set(key, value)
+		h.Set(key, value, false)
 	}
 	return read, done, nil
 }

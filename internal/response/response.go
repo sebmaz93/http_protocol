@@ -48,9 +48,9 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 
 func GetDefaultHeaders(contentLen int) *headers.Headers {
 	h := headers.NewHeaders()
-	h.Set("Content-Length", strconv.Itoa(contentLen))
-	h.Set("Connection", "close")
-	h.Set("Content-Type", "text/plain")
+	h.Set("Content-Length", strconv.Itoa(contentLen), false)
+	h.Set("Connection", "close", false)
+	h.Set("Content-Type", "text/plain", false)
 	return h
 }
 
