@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -34,6 +35,7 @@ func main() {
 	server.GET("/myproblem", myProblemHandler)
 	server.GET("/httpbin/stream/:count", chunkHandler)
 	server.GET("/httpbin/:type", tailersHandler)
+	server.GET("/video", videoHandler)
 
 	if err := server.Serve(); err != nil {
 		log.Fatalf("Error starting server: %v", err)
@@ -163,10 +165,6 @@ func chunkHandler(res *response.Writer, req *request.Request) *server.HandlerErr
 		res.WriteBody(request.CRLF)
 	}
 	res.WriteBody([]byte(fmt.Sprintf("0%s", request.CRLF)))
-	trailers := h.NewHeaders()
-	out := sha256.Sum256(fullBody)
-	trailers.Set("X-Content-SHA256", toStr(out[:]), false)
-	trailers.Set("X-Content-Length", fmt.Sprintf("%d", len(fullBody)), false)
 	return nil
 }
 
@@ -214,5 +212,45 @@ func tailersHandler(res *response.Writer, req *request.Request) *server.HandlerE
 	trailers.Set("X-Content-SHA256", "3f324f9914742e62cf082861ba03b207282dba781c3349bee9d7c1b5ef8e0bfe", false)
 	trailers.Set("X-Content-Length", fmt.Sprintf("%d", 3741), false)
 	res.WriteHeaders(*trailers)
+	return nil
+}
+
+func videoHandler(res *response.Writer, req *request.Request) *server.HandlerError {
+	file, err := os.Open("assets/vim.mp4")
+	if err != nil {
+		return &server.HandlerError{
+			StatusCode: response.StatusServerError,
+			Message:    "error reading video\n",
+		}
+	}
+	defer file.Close()
+
+	headers := response.GetDefaultHeaders(0)
+	headers.Delete("Content-length")
+	headers.Set("Transfer-Encoding", "chunked", true)
+	headers.Set("Content-type", "video/mp4", true)
+	headers.Set("Accept-Ranges", "none", true)
+	res.WriteStatusLine(response.StatusOK)
+	res.WriteHeaders(*headers)
+
+	buffer := make([]byte, 1024*1024)
+	for {
+		n, err := file.Read(buffer)
+		if n > 0 {
+			res.WriteBody([]byte(fmt.Sprintf("%x%s", n, request.CRLF)))
+			res.WriteBody(buffer[:n])
+			res.WriteBody(request.CRLF)
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Printf("Error reading video file: %v", err)
+			break
+		}
+	}
+
+	res.WriteBody([]byte(fmt.Sprintf("0%s", request.CRLF)))
+	res.WriteBody(request.CRLF)
 	return nil
 }
